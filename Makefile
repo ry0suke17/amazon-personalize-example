@@ -65,7 +65,19 @@ delete-personalize-interactions-dataset:
 # }
 
 
-BUCKET_NAME=test-personalize-data
+
+# AWS S3 {
+# --------------------------------------------------
+# --------------------------------------------------
+
+BUCKET_NAME=test-personalize-data2
 
 create-s3-bucket:
 	aws s3 mb s3://$(BUCKET_NAME)
+
+delete-s3-bucket:
+	aws s3 rm s3://$(BUCKET_NAME) --recursive
+
+# --------------------------------------------------
+# --------------------------------------------------
+# }
