@@ -92,7 +92,7 @@ delete-personalize-interactions-dataset:
 
 create-personalize-interactions-dataset-import-job:
 	aws personalize create-dataset-import-job \
-		--job-name $(INTERACTIONS_DATESET_NAME)Job \
+		--job-name $(INTERACTIONS_DATESET_NAME)Job-`openssl rand -base64 12 | fold -w 10 | head -1` \
 		--dataset-arn `aws personalize list-datasets | jq -r '.datasets[] | select(.name | contains("$(INTERACTIONS_DATESET_NAME)")) | .datasetArn'` \
 		--data-source dataLocation=s3://$(BUCKET_NAME)/interactions.csv \
 		--role-arn `aws iam list-roles | jq -r '.Roles[] | select(.RoleName | contains("$(IAM_ROLE_NAME)")) | .Arn'`
@@ -120,6 +120,15 @@ upload-s3-csv:
 	cat data/MovieLens/ml-latest-small/ratings.csv  | cut -d "," -f 1-2,4 | sed -e 's/userId,movieId,timestamp/USER_ID,ITEM_ID,TIMESTAMP/' > interactions.csv
 	aws s3 cp interactions.csv s3://$(BUCKET_NAME)/interactions.csv
 	rm interactions.csv
+
+attach-s3-bucket-policy:
+	aws s3api put-bucket-policy \
+		--bucket $(BUCKET_NAME) \
+		--policy file://s3/bucket-policy.json
+
+detach-s3-bucket-policy:
+	aws s3api delete-bucket-policy \
+		--bucket $(BUCKET_NAME)
 
 # --------------------------------------------------
 # --------------------------------------------------
