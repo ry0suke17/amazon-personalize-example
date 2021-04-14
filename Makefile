@@ -68,12 +68,12 @@ delete-personalize-dataset-group:
 
 DATASET_INTERACTIONS_SCHEMA_NAME=TestDatasetInteractionsSchema
 
-create-personalize-dataset-schema:
+create-personalize-interactions-dataset-schema:
 	aws personalize create-schema \
 		--name $(DATASET_INTERACTIONS_SCHEMA_NAME) \
 		--schema file://personalize/interactions-schema.json
 
-delete-personalize-dataset-schema:
+delete-personalize-interactions-dataset-schema:
 	aws personalize delete-schema \
 		--schema-arn `aws personalize list-schemas | jq -r '.schemas[] | select(.name | contains("$(DATASET_INTERACTIONS_SCHEMA_NAME)")) | .schemaArn'`
 
@@ -92,10 +92,88 @@ delete-personalize-interactions-dataset:
 
 create-personalize-interactions-dataset-import-job:
 	aws personalize create-dataset-import-job \
-		--job-name $(INTERACTIONS_DATESET_NAME)Job-`openssl rand -base64 12 | fold -w 10 | head -1` \
+		--job-name $(INTERACTIONS_DATESET_NAME)Job \
 		--dataset-arn `aws personalize list-datasets | jq -r '.datasets[] | select(.name | contains("$(INTERACTIONS_DATESET_NAME)")) | .datasetArn'` \
 		--data-source dataLocation=s3://$(BUCKET_NAME)/interactions.csv \
 		--role-arn `aws iam list-roles | jq -r '.Roles[] | select(.RoleName | contains("$(IAM_ROLE_NAME)")) | .Arn'`
+
+DATASET_ITEMS_SCHEMA_NAME=TestDatasetItemsSchema
+
+create-personalize-items-dataset-schema:
+	aws personalize create-schema \
+		--name $(DATASET_ITEMS_SCHEMA_NAME) \
+		--schema file://personalize/items-schema.json
+
+delete-personalize-items-dataset-schema:
+	aws personalize delete-schema \
+		--schema-arn `aws personalize list-schemas | jq -r '.schemas[] | select(.name | contains("$(DATASET_ITEMS_SCHEMA_NAME)")) | .schemaArn'`
+
+ITEMS_DATESET_NAME=TestItemsDataset
+
+create-personalize-items-dataset:
+	aws personalize create-dataset \
+		--name $(ITEMS_DATESET_NAME) \
+		--dataset-type Items \
+		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'` \
+		--schema-arn `aws personalize list-schemas | jq -r '.schemas[] | select(.name | contains("$(DATASET_ITEMS_SCHEMA_NAME)")) | .schemaArn'`
+
+delete-personalize-items-dataset:
+	aws personalize delete-dataset \
+		--dataset-arn `aws personalize list-datasets | jq -r '.datasets[] | select(.name | contains("$(ITEMS_DATESET_NAME)")) | .datasetArn'`
+
+create-personalize-items-dataset-import-job:
+	aws personalize create-dataset-import-job \
+		--job-name $(ITEMS_DATESET_NAME)Job \
+		--dataset-arn `aws personalize list-datasets | jq -r '.datasets[] | select(.name | contains("$(ITEMS_DATESET_NAME)")) | .datasetArn'` \
+		--data-source dataLocation=s3://$(BUCKET_NAME)/items.csv \
+		--role-arn `aws iam list-roles | jq -r '.Roles[] | select(.RoleName | contains("$(IAM_ROLE_NAME)")) | .Arn'`
+
+SOLUTION_NAME=TestSolution
+
+create-personalize-solution:
+	aws personalize create-solution \
+		--name $(SOLUTION_NAME) \
+		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'` \
+		--recipe-arn arn:aws:personalize:::recipe/aws-sims
+
+create-personalize-solution-version:
+	aws personalize create-solution-version \
+		--solution-arn `aws personalize list-solutions | jq -r '.solutions[] | select(.name | contains("$(SOLUTION_NAME)")) | .solutionArn'`
+
+get-personalize-solution-metorics:
+	aws personalize get-solution-metrics \
+    	--solution-version-arn `aws personalize list-solution-versions | jq -r '.solutionVersions[-1].solutionVersionArn'`
+
+CAMPAIGN_NAME=TestCampaign
+
+create-personalize-campaign:
+	# Since this is a test, set min-provisioned-tps to 2.
+	# - ref. https://aws.amazon.com/personalize/pricing/?nc1=h_l
+	#   > The actual TPS used is calculated as the average requests/second within a 5-minute window.
+	#   > You pay for maximum of either the minimum provisioned TPS or the actual TPS.
+	aws personalize create-campaign \
+		--name $(CAMPAIGN_NAME) \
+		--solution-version-arn `aws personalize list-solution-versions | jq -r '.solutionVersions[-1].solutionVersionArn'` \
+		--min-provisioned-tps 5
+
+FILTER_NAME=TestFilter
+
+create-personalize-filter:
+	aws personalize create-filter \
+		--name $(FILTER_NAME) \
+		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'`  \
+		--filter-expression 'EXCLUDE ItemID WHERE Items.GENRES IN ($$GENRES)'
+
+ITEM_ID=1
+EXCLUDE_GENRES=\"Adventure\",\"Comedy\"
+
+get-personalize-recommendations:
+	aws personalize-runtime get-recommendations \
+      --campaign-arn `aws personalize list-campaigns | jq -r '.campaigns[] | select(.name | contains("$(CAMPAIGN_NAME)")) | .campaignArn'` \
+      --item-id $(ITEM_ID) \
+      --filter-arn `aws personalize list-filters | jq -r '.Filters[] | select(.name | contains("$(FILTER_NAME)")) | .filterArn'` \
+	  --filter-values '{"GENRES": "$(EXCLUDE_GENRES)"}'
+
 
 # --------------------------------------------------
 # --------------------------------------------------
@@ -115,11 +193,16 @@ create-s3-bucket:
 delete-s3-bucket:
 	aws s3 rm s3://$(BUCKET_NAME) --recursive
 
-upload-s3-csv:
+upload-s3-interactions-csv:
 	# ref. https://docs.aws.amazon.com/personalize/latest/dg/gs-prerequisites.html#gs-upload-to-bucket
 	cat data/MovieLens/ml-latest-small/ratings.csv  | cut -d "," -f 1-2,4 | sed -e 's/userId,movieId,timestamp/USER_ID,ITEM_ID,TIMESTAMP/' > interactions.csv
 	aws s3 cp interactions.csv s3://$(BUCKET_NAME)/interactions.csv
 	rm interactions.csv
+
+upload-s3-items-csv:
+	cat data/MovieLens/ml-latest-small/movies.csv | sed -e 's/movieId,title,genres/ITEM_ID,TITLE,GENRES/' > items.csv
+	aws s3 cp items.csv s3://$(BUCKET_NAME)/items.csv
+	rm items.csv
 
 attach-s3-bucket-policy:
 	aws s3api put-bucket-policy \
