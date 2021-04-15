@@ -136,6 +136,10 @@ create-personalize-solution:
 		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'` \
 		--recipe-arn arn:aws:personalize:::recipe/aws-sims
 
+delete-personalize-solution:
+	aws personalize delete-solution \
+		--solution-arn `aws personalize list-solutions | jq -r '.solutions[] | select(.name | contains("$(SOLUTION_NAME)")) | .solutionArn'`
+
 create-personalize-solution-version:
 	aws personalize create-solution-version \
 		--solution-arn `aws personalize list-solutions | jq -r '.solutions[] | select(.name | contains("$(SOLUTION_NAME)")) | .solutionArn'`
@@ -156,6 +160,10 @@ create-personalize-campaign:
 		--solution-version-arn `aws personalize list-solution-versions | jq -r '.solutionVersions[-1].solutionVersionArn'` \
 		--min-provisioned-tps 5
 
+delete-personalize-campaign:
+	aws personalize delete-campaign \
+		--campaign-arn `aws personalize list-campaigns | jq -r '.campaigns[] | select(.name | contains("$(CAMPAIGN_NAME)")) | .campaignArn'`
+
 FILTER_NAME=TestFilter
 
 create-personalize-filter:
@@ -164,15 +172,19 @@ create-personalize-filter:
 		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'`  \
 		--filter-expression 'EXCLUDE ItemID WHERE Items.GENRES IN ($$GENRES)'
 
+delete-personalize-filter:
+	aws personalize delete-filter \
+		--filter-arn `aws personalize list-filters | jq -r '.Filters[] | select(.name | contains("$(FILTER_NAME)")) | .filterArn'` \
+
 ITEM_ID=1
 EXCLUDE_GENRES=\"Adventure\",\"Comedy\"
 
 get-personalize-recommendations:
 	aws personalize-runtime get-recommendations \
-      --campaign-arn `aws personalize list-campaigns | jq -r '.campaigns[] | select(.name | contains("$(CAMPAIGN_NAME)")) | .campaignArn'` \
-      --item-id $(ITEM_ID) \
-      --filter-arn `aws personalize list-filters | jq -r '.Filters[] | select(.name | contains("$(FILTER_NAME)")) | .filterArn'` \
-	  --filter-values '{"GENRES": "$(EXCLUDE_GENRES)"}'
+		--campaign-arn `aws personalize list-campaigns | jq -r '.campaigns[] | select(.name | contains("$(CAMPAIGN_NAME)")) | .campaignArn'` \
+		--item-id $(ITEM_ID) \
+		--filter-arn `aws personalize list-filters | jq -r '.Filters[] | select(.name | contains("$(FILTER_NAME)")) | .filterArn'` \
+		--filter-values '{"GENRES": "$(EXCLUDE_GENRES)"}'
 
 
 # --------------------------------------------------
