@@ -151,14 +151,14 @@ get-personalize-solution-metorics:
 CAMPAIGN_NAME=TestCampaign
 
 create-personalize-campaign:
-	# Since this is a test, set min-provisioned-tps to 2.
+	# Since this is a test, set min-provisioned-tps to 1.
 	# - ref. https://aws.amazon.com/personalize/pricing/?nc1=h_l
 	#   > The actual TPS used is calculated as the average requests/second within a 5-minute window.
 	#   > You pay for maximum of either the minimum provisioned TPS or the actual TPS.
 	aws personalize create-campaign \
 		--name $(CAMPAIGN_NAME) \
 		--solution-version-arn `aws personalize list-solution-versions | jq -r '.solutionVersions[-1].solutionVersionArn'` \
-		--min-provisioned-tps 5
+		--min-provisioned-tps 1
 
 delete-personalize-campaign:
 	aws personalize delete-campaign \
