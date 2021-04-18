@@ -46,6 +46,10 @@ detach-iam-role-policy:
     	--role-name $(IAM_ROLE_NAME) \
     	--policy-arn `aws iam list-policies --scope Local | jq -r '.Policies[] | select(.PolicyName | contains("$(IAM_S3_POLICY_NAME)")) | .Arn'`
 
+create-iam-all: create-iam-role \
+	create-iam-policy \
+	attach-iam-role-policy
+
 # --------------------------------------------------
 # --------------------------------------------------
 # }
@@ -128,6 +132,15 @@ create-personalize-items-dataset-import-job:
 		--data-source dataLocation=s3://$(BUCKET_NAME)/items.csv \
 		--role-arn `aws iam list-roles | jq -r '.Roles[] | select(.RoleName | contains("$(IAM_ROLE_NAME)")) | .Arn'`
 
+create-personalize-dataset-group-all: create-personalize-dataset-group \
+	create-personalize-interactions-dataset-schema \
+	create-personalize-items-dataset-schema \
+	create-personalize-interactions-dataset \
+	create-personalize-items-dataset \
+	create-personalize-interactions-dataset-import-job \
+	create-personalize-items-dataset-import-job
+
+
 SOLUTION_NAME=TestSolution
 
 create-personalize-solution:
@@ -144,7 +157,7 @@ create-personalize-solution-version:
 	aws personalize create-solution-version \
 		--solution-arn `aws personalize list-solutions | jq -r '.solutions[] | select(.name | contains("$(SOLUTION_NAME)")) | .solutionArn'`
 
-get-personalize-solution-metorics:
+get-personalize-solution-metrics:
 	aws personalize get-solution-metrics \
     	--solution-version-arn `aws personalize list-solution-versions | jq -r '.solutionVersions[-1].solutionVersionArn'`
 
@@ -204,17 +217,18 @@ create-s3-bucket:
 
 delete-s3-bucket:
 	aws s3 rm s3://$(BUCKET_NAME) --recursive
+	aws s3 rb s3://$(BUCKET_NAME)
 
 upload-s3-interactions-csv:
 	# ref. https://docs.aws.amazon.com/personalize/latest/dg/gs-prerequisites.html#gs-upload-to-bucket
-	cat data/MovieLens/ml-latest-small/ratings.csv  | cut -d "," -f 1-2,4 | sed -e 's/userId,movieId,timestamp/USER_ID,ITEM_ID,TIMESTAMP/' > interactions.csv
-	aws s3 cp interactions.csv s3://$(BUCKET_NAME)/interactions.csv
-	rm interactions.csv
+	cat data/MovieLens/ml-latest-small/ratings.csv  | cut -d "," -f 1-2,4 | sed -e 's/userId,movieId,timestamp/USER_ID,ITEM_ID,TIMESTAMP/' > tmp.csv
+	aws s3 cp tmp.csv s3://$(BUCKET_NAME)/interactions.csv
+	rm tmp.csv
 
 upload-s3-items-csv:
-	cat data/MovieLens/ml-latest-small/movies.csv | sed -e 's/movieId,title,genres/ITEM_ID,TITLE,GENRES/' > items.csv
-	aws s3 cp items.csv s3://$(BUCKET_NAME)/items.csv
-	rm items.csv
+	cat data/MovieLens/ml-latest-small/movies.csv | sed -e 's/movieId,title,genres/ITEM_ID,TITLE,GENRES/' > tmp.csv
+	aws s3 cp tmp.csv s3://$(BUCKET_NAME)/items.csv
+	rm tmp.csv
 
 attach-s3-bucket-policy:
 	aws s3api put-bucket-policy \
@@ -224,6 +238,11 @@ attach-s3-bucket-policy:
 detach-s3-bucket-policy:
 	aws s3api delete-bucket-policy \
 		--bucket $(BUCKET_NAME)
+
+create-s3-all: create-s3-bucket \
+	attach-s3-bucket-policy \
+	upload-s3-interactions-csv \
+	upload-s3-items-csv
 
 # --------------------------------------------------
 # --------------------------------------------------

@@ -4,24 +4,13 @@
 
 ```shell
 # S3
-make create-s3-bucket
-make attach-s3-bucket-policy
-make upload-s3-interactions-csv
-make upload-s3-items-csv
+make create-s3-all
 
 # IAM
-make create-iam-role
-make create-iam-policy
-make attach-iam-role-policy
+make create-iam-all
 
 # Personalize
-make create-personalize-dataset-group
-make create-personalize-interactions-dataset-schema
-make create-personalize-items-dataset-schema
-make create-personalize-interactions-dataset
-make create-personalize-items-dataset
-make create-personalize-interactions-dataset-import-job
-make create-personalize-items-dataset-import-job
+make create-personalize-dataset-group-all
 make create-personalize-solution
 make create-personalize-solution-version
 make create-personalize-campaign
