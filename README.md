@@ -1,5 +1,8 @@
 # amazon-personalize-example
 
+This is test for Amazon Personalize with the [MovieLens data](https://grouplens.org/datasets/movielens/).
+This repository summarizes the commands for setting up and cleaning up the resources to get recommendations.
+
 ## Set up resources
 
 ```shell
