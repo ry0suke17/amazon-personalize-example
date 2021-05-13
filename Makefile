@@ -186,16 +186,40 @@ delete-personalize-filter:
 	aws personalize delete-filter \
 		--filter-arn `aws personalize list-filters | jq -r '.Filters[] | select(.name | contains("$(FILTER_NAME)")) | .filterArn'` \
 
-ITEM_ID=1
 EXCLUDE_GENRES=\"Adventure\",\"Comedy\"
 
 get-personalize-recommendations:
 	aws personalize-runtime get-recommendations \
 		--campaign-arn `aws personalize list-campaigns | jq -r '.campaigns[] | select(.name | contains("$(CAMPAIGN_NAME)")) | .campaignArn'` \
 		--item-id $(ITEM_ID) \
+
+get-personalize-recommendations-with-filter:
+	aws personalize-runtime get-recommendations \
+		--campaign-arn `aws personalize list-campaigns | jq -r '.campaigns[] | select(.name | contains("$(CAMPAIGN_NAME)")) | .campaignArn'` \
+		--item-id $(ITEM_ID) \
 		--filter-arn `aws personalize list-filters | jq -r '.Filters[] | select(.name | contains("$(FILTER_NAME)")) | .filterArn'` \
 		--filter-values '{"GENRES": "$(EXCLUDE_GENRES)"}'
 
+EVENT_TRACKER_NAME=TestEventTracker
+
+create-personalize-event-tracker:
+	aws personalize create-event-tracker \
+		--name $(EVENT_TRACKER_NAME) \
+		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'`
+
+TRACKING_ID=test-tracking-id
+EVENT_TIMESTAMP=`date +%s`
+
+put-personalize-event:
+	aws personalize-events put-events \
+        --tracking-id $(TRACKING_ID) \
+        --user-id $(USER_ID) \
+        --session-id session1 \
+        --event-list '[{ \
+            "sentAt": "$(EVENT_TIMESTAMP)", \
+            "eventType": "eventTypePlaceholder", \
+            "itemId": "$(ITEM_ID)" \
+          }]'
 
 # --------------------------------------------------
 # --------------------------------------------------

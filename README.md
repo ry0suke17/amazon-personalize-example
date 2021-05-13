@@ -29,7 +29,13 @@ make create-personalize-filter
 ## Get recommendations
 
 ```shell
-make get-personalize-recommendations
+make get-personalize-recommendations ITEM_ID=1
+```
+
+## Put event
+
+```shell
+make put-personalize-event TRACKING_ID=tracking-id USER_ID=user-id ITEM_ID=item-id
 ```
 
 ## Clean up resources
