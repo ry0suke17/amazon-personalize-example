@@ -13,7 +13,13 @@ make create-s3-all
 make create-iam-all
 
 # Personalize
-make create-personalize-dataset-group-all
+make create-personalize-dataset-group
+make create-personalize-interactions-dataset-schema
+make create-personalize-items-dataset-schema
+make create-personalize-interactions-dataset 
+make create-personalize-items-dataset 
+make create-personalize-interactions-dataset-import-job 
+make create-personalize-items-dataset-import-job
 make create-personalize-solution
 make create-personalize-solution-version
 make create-personalize-campaign
@@ -32,11 +38,11 @@ make get-personalize-recommendations
 # Personalize
 make delete-personalize-filter
 make delete-personalize-campaign
+make delete-personalize-solution
 make delete-personalize-interactions-dataset
 make delete-personalize-items-dataset
 make delete-personalize-interactions-dataset-schema
 make delete-personalize-items-dataset-schema
-make delete-personalize-solution
 make delete-personalize-dataset-group
 
 # IAM

@@ -132,18 +132,15 @@ create-personalize-items-dataset-import-job:
 		--data-source dataLocation=s3://$(BUCKET_NAME)/items.csv \
 		--role-arn `aws iam list-roles | jq -r '.Roles[] | select(.RoleName | contains("$(IAM_ROLE_NAME)")) | .Arn'`
 
-create-personalize-dataset-group-all: create-personalize-dataset-group \
-	create-personalize-interactions-dataset-schema \
-	create-personalize-items-dataset-schema \
-	create-personalize-interactions-dataset \
-	create-personalize-items-dataset \
-	create-personalize-interactions-dataset-import-job \
-	create-personalize-items-dataset-import-job
-
-
 SOLUTION_NAME=TestSolution
 
 create-personalize-solution:
+	aws personalize create-solution \
+		--name $(SOLUTION_NAME) \
+		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'` \
+		--perform-auto-ml
+
+create-personalize-solution-with-sims-recipe:
 	aws personalize create-solution \
 		--name $(SOLUTION_NAME) \
 		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'` \
