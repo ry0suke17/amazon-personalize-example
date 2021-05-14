@@ -19,6 +19,16 @@
           "iam:PassedToService": "personalize.amazonaws.com"
         }
       }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Resource": [
+        "arn:aws:s3:::test-personalize-data2",
+        "arn:aws:s3:::test-personalize-data2/*"
+      ]
     }
   ]
 }

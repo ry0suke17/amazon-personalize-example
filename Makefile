@@ -96,7 +96,7 @@ delete-personalize-interactions-dataset:
 
 create-personalize-interactions-dataset-import-job:
 	aws personalize create-dataset-import-job \
-		--job-name $(INTERACTIONS_DATESET_NAME)Job \
+		--job-name $(INTERACTIONS_DATESET_NAME)ImportJob \
 		--dataset-arn `aws personalize list-datasets | jq -r '.datasets[] | select(.name | contains("$(INTERACTIONS_DATESET_NAME)")) | .datasetArn'` \
 		--data-source dataLocation=s3://$(BUCKET_NAME)/interactions.csv \
 		--role-arn `aws iam list-roles | jq -r '.Roles[] | select(.RoleName | contains("$(IAM_ROLE_NAME)")) | .Arn'`
@@ -207,6 +207,7 @@ create-personalize-event-tracker:
 		--name $(EVENT_TRACKER_NAME) \
 		--dataset-group-arn `aws personalize list-dataset-groups | jq -r '.datasetGroups[] | select(.name | contains("$(DATESET_GROUP_NAME)")) | .datasetGroupArn'`
 
+# TODO: Get tracking ID from aws command
 TRACKING_ID=test-tracking-id
 EVENT_TIMESTAMP=`date +%s`
 
@@ -220,6 +221,14 @@ put-personalize-event:
             "eventType": "eventTypePlaceholder", \
             "itemId": "$(ITEM_ID)" \
           }]'
+
+create-personalize-interactions-dataset-export-job:
+	aws personalize create-dataset-export-job \
+		--job-name $(INTERACTIONS_DATESET_NAME)ExportJob \
+		--dataset-arn `aws personalize list-datasets | jq -r '.datasets[] | select(.name | contains("$(INTERACTIONS_DATESET_NAME)")) | .datasetArn'` \
+		--role-arn `aws iam list-roles | jq -r '.Roles[] | select(.RoleName | contains("$(IAM_ROLE_NAME)")) | .Arn'` \
+		--ingestion-mode 'PUT' \
+		--job-output '{"s3DataDestination": { "path": "s3://$(BUCKET_NAME)" }}}'
 
 # --------------------------------------------------
 # --------------------------------------------------

@@ -29,7 +29,7 @@ make create-personalize-filter
 ## Get recommendations
 
 ```shell
-make get-personalize-recommendations ITEM_ID=1
+make get-personalize-recommendations ITEM_ID=item-id
 ```
 
 ## Put event
